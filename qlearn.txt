@@ -1,0 +1,28 @@
+model{
+  
+  alfa ~ dunif(0,1)
+  #beta ~ dnorm(0,.01)T(0,)
+  beta ~dgamma(1,0.5)
+  
+  #Trial 1
+  Q[1,1] ~ dnorm(0,.01)T(0,)
+  Q[1,2] ~ dnorm(0,.01)T(0,)
+  
+  # Trial 2 and onwards
+  for (t in 2:ntrials){
+    
+    for (k in 1:2){
+      #Only update chosen option
+      Qupdate[t,k] <- Q[t-1,k] + alfa*(r[t-1]-Q[t-1,k])
+      Q[t,k] <- ifelse(k==x[t-1], Qupdate[t,k], Q[t-1,k])
+      
+      exp_p[t,k] <- exp(beta*Q[t,k])
+    }
+    
+    for (k in 1:2){
+      p[t,k] <- exp_p[t,k]/sum(exp_p[t,])
+    }
+    
+    x[t] ~ dcat(p[t,])
+  }
+}

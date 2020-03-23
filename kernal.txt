@@ -1,0 +1,27 @@
+model{
+  
+  alfa ~ dunif(0,1)
+  beta ~ dgamma(1,0.5)
+  
+  #Trial 1
+  CK[1,1] ~ dnorm(0,.01)T(0,)
+  CK[1,2] ~ dnorm(0,.01)T(0,)
+  
+  # Trial 2 and onwards
+  for (t in 2:ntrials){
+    
+    for (k in 1:2){
+      CKchosen[t,k] <- CK[t-1,k] + alfa*(1-CK[t-1,k])
+      CKunchosen[t,k] <- CK[t-1,k] + alfa*(0-CK[t-1,k])
+      CK[t,k] <- ifelse(k==x[t-1], CKchosen[t,k], CKunchosen[t,k])
+      
+      exp_p[t,k] <- exp(beta*CK[t,k])
+    }
+    
+    for (k in 1:2){
+      p[t,k] <- exp_p[t,k]/sum(exp_p[t,])
+    }
+    
+    x[t] ~ dcat(p[t,])
+  }
+}

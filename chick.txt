@@ -1,0 +1,11 @@
+model {
+
+  theta ~ dbeta(1,1)
+  
+  for (t in 1:ntrials){
+    
+    G[t] ~ dbin(theta,1)  
+  
+  }
+
+}

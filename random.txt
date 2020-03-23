@@ -1,0 +1,11 @@
+model{
+  
+  theta ~ dunif(0,1)
+  b[1] <- theta
+  b[2] <- 1-theta
+
+ for (t in 1:ntrials){
+    x[t] ~ dcat(b)
+  }
+
+}
