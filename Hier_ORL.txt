@@ -1,0 +1,68 @@
+model{
+  
+  mu_Arew ~ dnorm(0.5, 1)T(0,1)
+  mu_Apun ~ dnorm(0.5, 1)T(0,1)
+  mu_K ~ dunif(0, 5)
+  mu_wp ~ dnorm(0, 1)
+  mu_wf ~ dnorm(0, 1)
+  
+  l_Arew ~ dgamma(.01,.01)
+  l_Apun ~ dgamma(.01,.01)
+  l_K ~ dgamma(.01,.01)
+  l_wp ~ dgamma(.01,.01)
+  l_wf ~ dgamma(.01,.01)
+  
+  for (s in 1:nsubs){
+    
+    Arew[s] ~ dnorm(mu_Arew, l_Arew)T(0,1)
+    Apun[s] ~ dnorm(mu_Apun, l_Apun)T(0,1)
+    K[s] ~ dnorm(mu_K, l_K)T(0,)
+    wp[s] ~ dnorm(mu_wp, l_wp)
+    wf[s] ~ dnorm(mu_wf, l_wf)
+    
+    Ev[s,1,1] = 0
+    Ev[s,1,2] = 0 
+    Ev[s,1,3] = 0 
+    Ev[s,1,4] = 0 
+    
+    Ef[s,1,1] = 0
+    Ef[s,1,2] = 0 
+    Ef[s,1,3] = 0 
+    Ef[s,1,4] = 0 
+    
+    PS[s,1,1] = 0 
+    PS[s,1,2] = 0 
+    PS[s,1,3] = 0 
+    PS[s,1,4] = 0 
+    
+    for (t in 2:ntrials_all[s]){
+      signX[s,t] <- ifelse(r[s,t-1]==0, 0, ifelse(r[s,t-1]<0, -1, 1)) 
+      
+      for (d in 1:4){
+        Ev_update[s,t,d] <- ifelse(r[s,t-1] >= 0, Ev[s,t-1,d]+ Arew[s]*(r[s,t-1] - Ev[s,t-1,d]), Ev[s,t-1,d]+ Apun[s]*(r[s,t-1] - Ev[s,t-1,d]))
+        
+        Ev[s,t,d] <- ifelse(x[s,t-1] ==d, Ev_update[s,t,d], Ev[s,t-1,d])
+        
+        Ef_chosen[s,t,d] <- ifelse(r[s,t-1] >= 0, Ef[s,t-1,d]+ Arew[s]*(signX[s,t] - Ef[s,t-1,d]), Ef[s,t-1,d]+ Apun[s]*(signX[s,t] - Ef[s,t-1,d]))
+        
+        Ef_notchosen[s,t,d] <- ifelse(r[s,t-1] >= 0, Ef[s,t-1,d]+ Arew[s]*((-signX[s,t])/3 - Ef[s,t-1,d]), Ef[s,t-1,d]+ Apun[s]*((-signX[s,t])/3 - Ef[s,t-1,d])) 
+        
+        Ef[s,t,d] <- ifelse(x[s,t-1] ==d, Ef_chosen[s,t,d], Ef_notchosen[s,t,d])
+        
+        PS[s,t,d] <- ifelse(x[s,t-1] ==d, 1/(1+K[s]), PS[s,t-1,d]/(1+K[s]))
+        
+        v[s,t,d] <- Ev[s,t,d] + wf[s]*Ef[s,t,d] + wp[s]*PS[s,t,d]
+        
+        exp_p[s,t,d] <- exp(1*v[s,t,d])
+        
+      }
+      
+      for (d in 1:4){
+        
+        p[s,t,d] <- exp_p[s,t,d]/sum(exp_p[s,t,])
+        
+      }
+      x[s,t] ~ dcat(p[s,t,])
+    }
+  }
+}
