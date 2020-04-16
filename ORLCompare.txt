@@ -1,0 +1,140 @@
+model{
+  
+  ###### priors #####
+  alpha_Arew ~ dnorm(0,1)
+  mu_Arew ~ dnorm(0,1)
+  lambda_Arew_ctr ~ dgamma(.1,.1)
+  lambda_Arew_add ~ dgamma(.1,.1)
+  
+  alpha_Apun ~ dnorm(0,1)
+  mu_Apun ~ dnorm(0,1)
+  lambda_Apun_ctr ~ dgamma(.1,.1)
+  lambda_Apun_add ~ dgamma(.1,.1)
+  
+  alpha_K ~ dnorm(0,1)
+  mu_K ~ dnorm(0,1)
+  lambda_K_ctr ~ dgamma(.1,.1)
+  lambda_K_add ~ dgamma(.1,.1)
+  
+  alpha_wp ~ dnorm(0,1)
+  mu_wp ~ dnorm(0,1)
+  lambda_wp_ctr ~ dgamma(.1,.1)
+  lambda_wp_add ~ dgamma(.1,.1)
+  
+  alpha_wf ~ dnorm(0,1)
+  mu_wf ~ dnorm(0,1)
+  lambda_wf_ctr ~ dgamma(.1,.1)
+  lambda_wf_add ~ dgamma(.1,.1)
+  
+  
+  ##### Addiction #########
+  for (s in 1:nsubs_add){
+    Arew_add[s] ~ dnorm((mu_Arew + (alpha_Arew/2)), lambda_Arew_add)T(0,1)
+    Apun_add[s] ~ dnorm((mu_Apun + (alpha_Apun/2)), lambda_Apun_add)T(0,1)
+    K_add[s] ~ dnorm((mu_K + (alpha_K/2)), lambda_K_add)T(0,)
+    wp_add[s] ~ dnorm((mu_wp + (alpha_wp/2)), lambda_wp_add)
+    wf_add[s] ~ dnorm((mu_wf + (alpha_wf/2)), lambda_wf_add)
+    
+    # Set T1 variable
+    Ev_add[s,1,1] = 0
+    Ev_add[s,1,2] = 0 
+    Ev_add[s,1,3] = 0 
+    Ev_add[s,1,4] = 0 
+    
+    Ef_add[s,1,1] = 0
+    Ef_add[s,1,2] = 0 
+    Ef_add[s,1,3] = 0 
+    Ef_add[s,1,4] = 0 
+    
+    PS_add[s,1,1] = 0 
+    PS_add[s,1,2] = 0 
+    PS_add[s,1,3] = 0 
+    PS_add[s,1,4] = 0 
+    
+    for (t in 2:ntrials_add[s]){
+      signX_add[s,t] <- ifelse(r_add[s,t-1]==0, 0, ifelse(r_add[s,t-1]<0, -1, 1)) 
+      
+      for (d in 1:4){
+        Ev_update_add[s,t,d] <- ifelse(r_add[s,t-1] >= 0, Ev_add[s,t-1,d]+ Arew_add[s]*(r_add[s,t-1] - Ev_add[s,t-1,d]), Ev_add[s,t-1,d]+ Apun_add[s]*(r_add[s,t-1] - Ev_add[s,t-1,d]))
+        
+        Ev_add[s,t,d] <- ifelse(x_add[s,t-1] ==d, Ev_update_add[s,t,d], Ev_add[s,t-1,d])
+        
+        Ef_chosen_add[s,t,d] <- ifelse(r_add[s,t-1] >= 0, Ef_add[s,t-1,d]+ Arew_add[s]*(signX_add[s,t] - Ef_add[s,t-1,d]), Ef_add[s,t-1,d]+ Apun_add[s]*(signX_add[s,t] - Ef_add[s,t-1,d]))
+        
+        Ef_notchosen_add[s,t,d] <- ifelse(r_add[s,t-1] >= 0, Ef_add[s,t-1,d]+ Arew_add[s]*((-signX_add[s,t])/3 - Ef_add[s,t-1,d]), Ef_add[s,t-1,d]+ Apun_add[s]*((-signX_add[s,t])/3 - Ef_add[s,t-1,d])) 
+        
+        Ef_add[s,t,d] <- ifelse(x_add[s,t-1] ==d, Ef_chosen_add[s,t,d], Ef_notchosen_add[s,t,d])
+        
+        PS_add[s,t,d] <- ifelse(x_add[s,t-1] ==d, 1/(1+K_add[s]), PS_add[s,t-1,d]/(1+K_add[s]))
+        
+        v_add[s,t,d] <- Ev_add[s,t,d] + wf_add[s]*Ef_add[s,t,d] + wp_add[s]*PS_add[s,t,d]
+        
+        exp_p_add[s,t,d] <- exp(1*v_add[s,t,d])
+        
+      }
+      
+      for (d in 1:4){
+        
+        p_add[s,t,d] <- exp_p_add[s,t,d]/sum(exp_p_add[s,t,])
+        
+      }
+      x_add[s,t] ~ dcat(p_add[s,t,])
+    }
+  }
+  
+  
+  ##### CONTROLS #########
+  for (s in 1:nsubs_ctr){
+    Arew_ctr[s] ~ dnorm((mu_Arew - (alpha_Arew/2)), lambda_Arew_ctr)T(0,1)
+    Apun_ctr[s] ~ dnorm((mu_Apun - (alpha_Apun/2)), lambda_Apun_ctr)T(0,1)
+    K_ctr[s] ~ dnorm((mu_K - (alpha_K/2)), lambda_K_ctr)T(0,)
+    wp_ctr[s] ~ dnorm((mu_wp - (alpha_wp/2)), lambda_wp_ctr)
+    wf_ctr[s] ~ dnorm((mu_wf - (alpha_wf/2)), lambda_wf_ctr)
+    
+    # Set T1 variable
+    Ev_ctr[s,1,1] = 0
+    Ev_ctr[s,1,2] = 0 
+    Ev_ctr[s,1,3] = 0 
+    Ev_ctr[s,1,4] = 0 
+    
+    Ef_ctr[s,1,1] = 0
+    Ef_ctr[s,1,2] = 0 
+    Ef_ctr[s,1,3] = 0 
+    Ef_ctr[s,1,4] = 0 
+    
+    PS_ctr[s,1,1] = 0 
+    PS_ctr[s,1,2] = 0 
+    PS_ctr[s,1,3] = 0 
+    PS_ctr[s,1,4] = 0 
+    
+    for (t in 2:ntrials_ctr[s]){
+      signX_ctr[s,t] <- ifelse(r_ctr[s,t-1]==0, 0, ifelse(r_ctr[s,t-1]<0, -1, 1)) 
+      
+      for (d in 1:4){
+        Ev_update_ctr[s,t,d] <- ifelse(r_ctr[s,t-1] >= 0, Ev_ctr[s,t-1,d]+ Arew_ctr[s]*(r_ctr[s,t-1] - Ev_ctr[s,t-1,d]), Ev_ctr[s,t-1,d]+ Apun_ctr[s]*(r_ctr[s,t-1] - Ev_ctr[s,t-1,d]))
+        
+        Ev_ctr[s,t,d] <- ifelse(x_ctr[s,t-1] ==d, Ev_update_ctr[s,t,d], Ev_ctr[s,t-1,d])
+        
+        Ef_chosen_ctr[s,t,d] <- ifelse(r_ctr[s,t-1] >= 0, Ef_ctr[s,t-1,d]+ Arew_ctr[s]*(signX_ctr[s,t] - Ef_ctr[s,t-1,d]), Ef_ctr[s,t-1,d]+ Apun_ctr[s]*(signX_ctr[s,t] - Ef_ctr[s,t-1,d]))
+        
+        Ef_notchosen_ctr[s,t,d] <- ifelse(r_ctr[s,t-1] >= 0, Ef_ctr[s,t-1,d]+ Arew_ctr[s]*((-signX_ctr[s,t])/3 - Ef_ctr[s,t-1,d]), Ef_ctr[s,t-1,d]+ Apun_ctr[s]*((-signX_ctr[s,t])/3 - Ef_ctr[s,t-1,d])) 
+        
+        Ef_ctr[s,t,d] <- ifelse(x_ctr[s,t-1] ==d, Ef_chosen_ctr[s,t,d], Ef_notchosen_ctr[s,t,d])
+        
+        PS_ctr[s,t,d] <- ifelse(x_ctr[s,t-1] ==d, 1/(1+K_ctr[s]), PS_ctr[s,t-1,d]/(1+K_ctr[s]))
+        
+        v_ctr[s,t,d] <- Ev_ctr[s,t,d] + wf_ctr[s]*Ef_ctr[s,t,d] + wp_ctr[s]*PS_ctr[s,t,d]
+        
+        exp_p_ctr[s,t,d] <- exp(1*v_ctr[s,t,d])
+        
+      }
+      
+      for (d in 1:4){
+        
+        p_ctr[s,t,d] <- exp_p_ctr[s,t,d]/sum(exp_p_ctr[s,t,])
+        
+      }
+      x_ctr[s,t] ~ dcat(p_ctr[s,t,])
+    }
+  }
+}
