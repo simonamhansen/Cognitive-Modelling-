@@ -71,8 +71,9 @@ samples <- jags.parallel(data, inits = NULL, params,
                          model.file = "PVLD.txt",
                          n.chains = 3, n.iter = 5000, n.burnin = 1000, n.thin = 1)
 
-# Check the traceplot
+# Check the traceplot & convergence diagnostics
 traceplot(samples)
+sammples
 
 # Plot choice probability on trial 32 
 p_post = samples$BUGSoutput$sims.list$p
@@ -218,15 +219,18 @@ r <- outcome_all
 
 data <- list('x', 'r', 'ntrials_all', 'nsubs')
 params <- c("mu_w", "mu_A", "mu_theta", "mu_a", "l_w", "l_A", "l_theta", "l_a")
-PVL_samples <- jags(data, inits = NULL, params, 
+PVL_samples <- jags.parallel(data, inits = NULL, params, 
                          model.file = "Hier_PVL.txt",
                          n.chains = 3, n.iter = 5000, n.burnin = 1000, n.thin = 1)
-par(mfrow = c(2,2))
 
-plot(density(samples$BUGSoutput$sims.list$mu_A), main = "mu_A") 
-plot(density(samples$BUGSoutput$sims.list$mu_w), main = "mu_w")
-plot(density(samples$BUGSoutput$sims.list$mu_a), main = "mu_a")
-plot(density(samples$BUGSoutput$sims.list$mu_theta), main = "mu_theta")
+# Check convergence
+PVL_samples
+
+par(mfrow = c(2,2))
+plot(density(PVL_samples$BUGSoutput$sims.list$mu_A), main = "mu_A") 
+plot(density(PVL_samples$BUGSoutput$sims.list$mu_w), main = "mu_w")
+plot(density(PVL_samples$BUGSoutput$sims.list$mu_a), main = "mu_a")
+plot(density(PVL_samples$BUGSoutput$sims.list$mu_theta), main = "mu_theta")
 
 #ORL model
 
@@ -235,10 +239,13 @@ r <- outcome_scale
 
 data <- list('x', 'r', 'ntrials_all', 'nsubs')
 params <- c("mu_Arew", "mu_Apun", "mu_K", "mu_wp", "mu_wf", "l_Arew", "l_Apun", "l_K", "l_wp", "l_wf")
-ORL_samples <- jags(data, inits = NULL, params, 
-                         model.file = "Hier_ORL.txt",
+ORL_samples <- jags.parallel(data, inits = NULL, params, 
+                         model.file = "Hier_ORL_NEW.txt",
                          n.chains = 3, n.iter = 5000, n.burnin = 1000, n.thin = 1)
 
+# Check convergence diagnostics
+ORL_samples
+# Plot group posteriors
 par(mfrow = c(3,2))
 plot(density(ORL_samples$BUGSoutput$sims.list$mu_Arew), main = "mu Arew")
 plot(density(ORL_samples$BUGSoutput$sims.list$mu_Apun), main = "mu Apun")
@@ -254,9 +261,11 @@ l <- abs(loss_scale)
 
 data <- list('x', 'r', 'l', 'ntrials_all', 'nsubs')
 params <- c("mu_theta", "mu_decay", "mu_alfa", "mu_phi", "mu_C", "l_theta", "l_decay", "l_alfa", "l_phi", "l_C")
-VSE_samples <- jags(data, inits = NULL, params, 
+VSE_samples <- jags.parallel(data, inits = NULL, params, 
                          model.file = "Hier_VSE.txt",
                          n.chains = 3, n.iter = 5000, n.burnin = 1000, n.thin = 1)
+# Check convergence
+VSE_samples
 
 par(mfrow = c(3,2))
 plot(density(VSE_samples$BUGSoutput$sims.list$mu_theta), main = "Theta")
