@@ -1,0 +1,40 @@
+model{
+  for (n in 1:nagents){
+  
+    omega1[n] ~ dnorm(0.5,1)T(0,1)
+    lambda[n] ~ dnorm(0.5,1)T(0,1)
+    gamma[n] ~ dnorm(0.5,1)T(0,1)
+    p0[n] ~ dunif(0,20) 
+    pbeta[n] ~ dunif(0,1)
+  
+    for (i in 1:length(vals)){
+      pvals[n,i] = p0[n] + (pbeta[n]*vals[i])
+    }
+  
+    omega[n,1] = omega1[n]
+    
+    Gb[n,1] = c[n,1]
+    
+    mu_c[n,1] = Ga[1]
+  
+  }
+
+  for (t in 2:ntrials){
+    
+    for (n in 1:nagents){
+      
+      Gb[n,t] = (gamma[n]*Gb[n,t-1])+(1-gamma[n])*Ga[t-1]
+      
+      pval_index[n,t] = ifelse(round(Gb[n,t]) > 1, round(Gb[n,t]) ,1)
+      
+      p[n,t] = pvals[n, pval_index[n,t]]
+      
+      omega[n,t] = omega[n,t-1]*(1-lambda[n])
+      
+      mu_c[n,t] = omega[n,t]*Gb[n,t] + (1-omega[n,t])*p[n,t]
+      
+      c[n,t] ~ dnorm(mu_c[n,t], .1)
+      
+    }
+  }
+}
